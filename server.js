@@ -53,6 +53,12 @@ app.post('/api/call', (req, res) => {
     });
 });
 
+
+app.get('/postback', (req, res) => {
+  const { app, userid, amount, payout, currency, token } = req.query;
+  // TODO: Add database logic to credit the user's account
+  res.status(200).json({ success: true, user: userid, rewarded: amount });
+});
 // Global Error Handling Middleware
 app.use((err, req, res, next) => {
     console.error('Unhandled server error:', err.stack);

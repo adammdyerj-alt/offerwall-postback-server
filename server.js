@@ -1,6 +1,9 @@
 const express = require('express');
 const app = express();
 const PORT = process.env.PORT || 3000;
+// Simple in-memory balance store (or replace with your database connection)
+const userBalances = {};
+
 
 // Middleware to parse JSON and URL-encoded bodies (supports incoming postbacks & API calls)
 app.use(express.json());
@@ -52,7 +55,38 @@ app.post('/api/call', (req, res) => {
         data: callData
     });
 });
+// Offerwall Postback Endpoint
+app.get('/postback', (req, res) => {
+  const { app: appId, userid, amount, currency, token } = req.query;
 
+  if (!userid || !amount) {
+    return res.status(400).json({ success: false, error: "Missing userid or amount" });
+  }
+
+  const rewardNum = parseFloat(amount);
+
+  if (!userBalances[userid]) {
+    userBalances[userid] = 0;
+  }
+
+  userBalances[userid] += rewardNum;
+
+  console.log(`Credited user ${userid} with ${rewardNum} ${currency || 'Tokens'}. New balance: ${userBalances[userid]}`);
+
+  res.status(200).json({ 
+    success: true, 
+    user: userid, 
+    rewarded: rewardNum, 
+    newBalance: userBalances[userid] 
+  });
+});
+
+// Balance Check Helper Route
+app.get('/balance', (req, res) => {
+  const { userid } = req.query;
+  const balance = userBalances[userid] || 0;
+  res.status(200).json({ userid, balance });
+});
 
 app.get('/postback', (req, res) => {
   const { app, userid, amount, payout, currency, token } = req.query;
